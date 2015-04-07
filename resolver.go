@@ -2,6 +2,7 @@ package resolv
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/miekg/dns"
 	"golang.org/x/net/context"
@@ -69,26 +70,59 @@ func (r *Resolver) Resolve(req *Request) <-chan *Response {
 	return c
 }
 
-func (r *Resolver) ResolveTypes(ctx context.Context, proto, addr string, name string, types ...uint16) <-chan *Response {
-	c := make(chan *Response, len(types))
+func (r *Resolver) merge(ctx context.Context, cs ...<-chan *Response) <-chan *Response {
+	var wg sync.WaitGroup
+	out := make(chan *Response)
 
-	// TODO: implement me
-	for i := 0; i < len(types); i++ {
-		c <- &Response{}
+	// Start an output goroutine for each input channel in cs.  output
+	// copies values from c to out until c or done is closed, then calls
+	// wg.Done.
+	output := func(c <-chan *Response) {
+		defer wg.Done()
+		for resp := range c {
+			select {
+			case out <- resp:
+			case <-ctx.Done():
+				return
+			}
+		}
 	}
 
-	close(c)
-	return c
+	wg.Add(len(cs))
+	for _, c := range cs {
+		go output(c)
+	}
+
+	// Start a goroutine to close out once all the output goroutines are
+	// done.  This must start after the wg.Add call.
+	go func() {
+		wg.Wait()
+		close(out)
+	}()
+
+	return out
 }
 
-func (r *Resolver) ResolveNames(ctx context.Context, proto, addr string, type_ uint16, names ...string) <-chan *Response {
-	c := make(chan *Response, len(names))
+func (r *Resolver) ResolveTypes(ctx context.Context, addr string, name string, types []uint16, options ...RequestOption) <-chan *Response {
+	cs := []<-chan *Response{}
 
-	// TODO: implement me
-	for i := 0; i < len(names); i++ {
-		c <- &Response{}
+	for i := 0; i < len(types); i++ {
+		req := NewRequest(addr, name, types[i], options...)
+		c := r.Resolve(req)
+		cs = append(cs, c)
 	}
 
-	close(c)
-	return c
+	return r.merge(ctx, cs...)
+}
+
+func (r *Resolver) ResolveNames(ctx context.Context, addr string, type_ uint16, names []string, options ...RequestOption) <-chan *Response {
+	cs := []<-chan *Response{}
+
+	for i := 0; i < len(names); i++ {
+		req := NewRequest(addr, names[i], type_, options...)
+		c := r.Resolve(req)
+		cs = append(cs, c)
+	}
+
+	return r.merge(ctx, cs...)
 }

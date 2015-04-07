@@ -8,6 +8,14 @@ import (
 	"luadns.com/resolv"
 )
 
+var nss = []string{
+	"ns1.luadns.net",
+	"ns2.luadns.net",
+	"ns3.luadns.net",
+	"ns4.luadns.net",
+	"ns5.luadns.net",
+}
+
 func TestShort(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
@@ -32,27 +40,49 @@ func TestResolve(t *testing.T) {
 	}
 
 	// CHAOS class
-	req = resolv.NewRequest("ns5.linode.com", "version.bind", dns.TypeTXT, resolv.SetCHAOSClass)
+	req = resolv.NewRequest("ns1.linode.com", "version.bind", dns.TypeTXT, resolv.SetCHAOSClass)
 	resp = <-r.Resolve(req)
 	if resp.Err != nil {
 		t.Fatal(resp.Err)
 	}
 }
 
-func TestFanIn(t *testing.T) {
+func TestResolveTypes(t *testing.T) {
 	r := resolv.NewResolver()
 
 	// Query multiple types
 	types := []uint16{dns.TypeA, dns.TypeNS, dns.TypeMX}
-	c1 := r.ResolveTypes(context.Background(), resolv.ProtoUDP, "8.8.8.8", "cherpec.com", types...)
-	if len(c1) != len(types) {
-		t.Errorf("responses missmatch: %v != %v", len(c1), len(types))
+	c := r.ResolveTypes(context.Background(), "8.8.8.8", "cherpec.com", types)
+
+	n := 0
+	for resp := range c {
+		if resp.Err != nil {
+			t.Fatal(resp.Err)
+		}
+		n++
 	}
+
+	if n != len(types) {
+		t.Errorf("responses missmatch: %v != %v", n, len(types))
+	}
+}
+
+func TestResolveNames(t *testing.T) {
+	r := resolv.NewResolver()
 
 	// Query multiple names
 	names := []string{"cherpec.com", "www.cherpec.com"}
-	c2 := r.ResolveNames(context.Background(), resolv.ProtoUDP, "8.8.8.8", dns.TypeA, names...)
-	if len(c2) != len(names) {
-		t.Errorf("responses missmatch: %v != %v", len(c2), len(names))
+	c := r.ResolveNames(context.Background(), "8.8.8.8", dns.TypeA, names)
+
+	n := 0
+	for resp := range c {
+		if resp.Err != nil {
+			t.Fatal(resp.Err)
+		}
+		n++
+	}
+
+	if n != len(names) {
+		t.Errorf("responses missmatch: %v != %v", n, len(names))
 	}
 }
