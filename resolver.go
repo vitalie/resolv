@@ -2,7 +2,6 @@ package resolv
 
 import (
 	"fmt"
-	"net"
 
 	"github.com/miekg/dns"
 	"golang.org/x/net/context"
@@ -15,7 +14,7 @@ func NewResolver() *Resolver {
 	return &Resolver{}
 }
 
-func (r *Resolver) Do(ctx context.Context, req *Request) <-chan *Response {
+func (r *Resolver) Resolve(req *Request) <-chan *Response {
 	c := make(chan *Response, 1)
 
 	go func() {
@@ -28,10 +27,16 @@ func (r *Resolver) Do(ctx context.Context, req *Request) <-chan *Response {
 		}()
 
 		// Prepare message
+		// m := new(dns.Msg)
+		// m.SetQuestion(req.Name, req.Type)
 		m := new(dns.Msg)
-		m.SetQuestion(req.Name, req.Type)
+		m.Id = dns.Id()
+		m.RecursionDesired = true
+		m.Question = make([]dns.Question, 1)
+		m.Question[0] = dns.Question{req.Name, req.Type, req.Class}
 
 		cli := new(dns.Client)
+		cli.Net = req.Mode
 		// TODO: https://godoc.org/github.com/miekg/dns#Exchange
 		// - UDP/TCP
 		// - Truncated response
@@ -43,8 +48,12 @@ func (r *Resolver) Do(ctx context.Context, req *Request) <-chan *Response {
 			return
 		}
 
+		// DNS error
 		if in.Rcode != dns.RcodeSuccess {
-			err := &net.DNSError{Err: dns.RcodeToString[in.Rcode], Name: req.Name, Server: req.Addr}
+			err := NewDNSError(
+				dns.RcodeToString[in.Rcode],
+				req,
+			)
 			c <- &Response{Err: err}
 			return
 		}
@@ -55,5 +64,29 @@ func (r *Resolver) Do(ctx context.Context, req *Request) <-chan *Response {
 		}
 	}()
 
+	return c
+}
+
+func (r *Resolver) ResolveTypes(ctx context.Context, proto, addr string, name string, types ...uint16) <-chan *Response {
+	c := make(chan *Response, len(types))
+
+	// TODO: implement me
+	for i := 0; i < len(types); i++ {
+		c <- &Response{}
+	}
+
+	close(c)
+	return c
+}
+
+func (r *Resolver) ResolveNames(ctx context.Context, proto, addr string, type_ uint16, names ...string) <-chan *Response {
+	c := make(chan *Response, len(names))
+
+	// TODO: implement me
+	for i := 0; i < len(names); i++ {
+		c <- &Response{}
+	}
+
+	close(c)
 	return c
 }
