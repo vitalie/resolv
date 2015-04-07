@@ -16,6 +16,7 @@ func NewResolver() *Resolver {
 }
 
 func (r *Resolver) Resolve(req *Request) <-chan *Response {
+	// Buffered channel to avoid goroutine leaking
 	c := make(chan *Response, 1)
 
 	go func() {
@@ -28,8 +29,6 @@ func (r *Resolver) Resolve(req *Request) <-chan *Response {
 		}()
 
 		// Prepare message
-		// m := new(dns.Msg)
-		// m.SetQuestion(req.Name, req.Type)
 		m := new(dns.Msg)
 		m.Id = dns.Id()
 		m.RecursionDesired = true
@@ -44,7 +43,6 @@ func (r *Resolver) Resolve(req *Request) <-chan *Response {
 		// - Truncated response
 		// - Timeout
 		// - Retry
-
 		in, rtt, err := cli.Exchange(m, req.Addr)
 		if err != nil {
 			c <- &Response{Err: err}
