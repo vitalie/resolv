@@ -57,7 +57,7 @@ func TestResolveTypes(t *testing.T) {
 	n := 0
 	for resp := range c {
 		if resp.Err != nil {
-			t.Fatal(resp.Err)
+			t.Error(resp.Err)
 		}
 		n++
 	}
@@ -77,7 +77,7 @@ func TestResolveNames(t *testing.T) {
 	n := 0
 	for resp := range c {
 		if resp.Err != nil {
-			t.Fatal(resp.Err)
+			t.Error(resp.Err)
 		}
 		n++
 	}
