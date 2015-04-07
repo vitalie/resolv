@@ -37,11 +37,13 @@ func (r *Resolver) Resolve(req *Request) <-chan *Response {
 
 		cli := new(dns.Client)
 		cli.Net = req.Mode
-		// TODO: https://godoc.org/github.com/miekg/dns#Exchange
-		// - UDP/TCP
+
+		// TODO:
+		// https://godoc.org/github.com/miekg/dns#Client
 		// - Truncated response
 		// - Timeout
 		// - Retry
+
 		in, rtt, err := cli.Exchange(m, req.Addr)
 		if err != nil {
 			c <- &Response{Err: err}
