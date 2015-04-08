@@ -4,7 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
+	"time"
 
 	"golang.org/x/net/context"
 	"luadns.com/resolv"
@@ -19,6 +21,8 @@ func usage() {
 var verbose bool
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
+
 	flag.BoolVar(&verbose, "verbose", false, "Enable debug messages")
 	flag.Usage = usage
 	flag.Parse()
@@ -29,14 +33,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	r := resolv.NewResolver()
-	d := resolv.NewDelegation(r)
-	d.Verbose = verbose
+	rs := resolv.NewResolver()
+	it := resolv.NewDelegIter(rs)
+	it.Verbose = verbose
 
-	resp, err := d.Resolve(context.Background(), args[0])
-	if err != nil {
-		log.Fatalln(err)
+	r := <-it.Resolve(context.Background(), args[0])
+	if r.Err != nil {
+		log.Fatalln(r.Err)
 	}
 
-	fmt.Println(resp)
+	for _, resp := range r.Path {
+		fmt.Println("=====>", resp.Addr())
+		fmt.Println(resp.Msg)
+	}
 }
