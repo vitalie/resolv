@@ -10,6 +10,9 @@ type DNSError struct {
 	Type  uint16
 	Class uint16
 	Addr  string
+
+	IsNameError bool
+	IsTimeout   bool
 }
 
 func NewDNSError(err string, req *Request) *DNSError {
@@ -23,6 +26,10 @@ func NewDNSError(err string, req *Request) *DNSError {
 
 	return e
 }
+
+func (e *DNSError) NameError() bool { return e.IsNameError }
+func (e *DNSError) Timeout() bool   { return e.IsTimeout }
+func (e *DNSError) Temporary() bool { return e.IsTimeout }
 
 func (e *DNSError) Error() string {
 	if e == nil {

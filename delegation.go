@@ -14,83 +14,108 @@ const (
 	MaxIterations = 16
 )
 
-type Iterator func(ctx context.Context, domain string, nss []string, n int, options ...RequestOption) (*Response, error)
-
 type Delegation struct {
-	Verbose  bool
-	resolver *Resolver
+	Path []*Response
+	Err  error
 }
 
-func NewDelegation(r *Resolver) *Delegation {
-	return &Delegation{resolver: r}
+type DelegIter struct {
+	Verbose bool
+	rs      *Resolver
 }
 
-func (r *Delegation) Resolve(ctx context.Context, domain string, options ...RequestOption) (*Response, error) {
-	used := map[string]bool{}
+func NewDelegIter(r *Resolver) *DelegIter {
+	return &DelegIter{rs: r}
+}
+
+func (it *DelegIter) Resolve(ctx context.Context, domain string) <-chan *Delegation {
+	out := make(chan *Delegation, 1)
+
+	go func() {
+		defer close(out)
+		path, err := it.run(ctx, domain, RootServers...)
+		out <- &Delegation{Path: path, Err: err}
+	}()
+
+	return out
+}
+
+func (it *DelegIter) run(ctx context.Context, domain string, nss ...string) ([]*Response, error) {
+	var ns string
+
+	skip := map[string]bool{}
 	fqdn := dns.Fqdn(strings.ToLower(domain))
+	path := []*Response{}
 
-	var iterator Iterator
-	iterator = func(ctx context.Context, domain string, nss []string, n int, options ...RequestOption) (*Response, error) {
-		if n == 0 {
+	for i := 0; len(nss) > 0; i++ {
+		if i > MaxIterations {
 			return nil, fmt.Errorf("iterator: max iterations reached")
 		}
 
-		if len(nss) == 0 {
-			return nil, fmt.Errorf("iterator: no more servers to try")
-		}
+		ns, nss = it.PeekRandom(nss)
+		skip[ns] = true
 
-		ns, nss := r.PeekRandom(nss)
-		if _, ok := used[ns]; ok {
-			return iterator(ctx, domain, nss, n-1, options...)
-		}
-		used[ns] = true
-
-		req := NewRequest(ns, domain, dns.TypeNS)
-		c := r.resolver.Resolve(req)
+		req := NewRequest(ns, fqdn, dns.TypeNS)
+		c := it.rs.Resolve(req)
 		select {
 		case resp := <-c:
-			if r.Verbose {
+			if it.Verbose {
+				log.Println("iterator: servers=", nss)
 				log.Println("iterator: ===>", resp.Addr(), resp)
 			}
 
 			if resp.Err != nil {
-				return iterator(ctx, domain, nss, n-1, options...)
+				if err, ok := resp.Err.(*DNSError); ok {
+					switch {
+					case err.NameError():
+						return nil, err
+					default:
+						continue
+					}
+				}
+				return nil, resp.Err
 			}
 
-			if referals, ok := r.Authority(resp.Msg, domain); ok {
-				return resp, nil
+			path = append(path, resp)
+			if _, ok := it.Search(resp.Msg.Answer, fqdn); ok {
+				return path, nil
+			}
+
+			if referals, ok := it.Search(resp.Msg.Ns, fqdn); ok {
+				return path, nil
 			} else {
-				for _, ns := range referals {
-					if _, ok := used[ns]; !ok {
-						nss = append(nss, ns)
+				if len(referals) > 0 {
+					nss = []string{}
+					for _, ns := range referals {
+						if _, ok := skip[ns]; !ok {
+							nss = append(nss, ns)
+						}
 					}
 				}
 			}
-
-			return iterator(ctx, domain, nss, n-1, options...)
 		case <-ctx.Done():
-			// FIXME: ...
-			return nil, nil
+			return nil, ctx.Err()
 		}
 	}
 
-	return iterator(ctx, fqdn, RootServers, MaxIterations, options...)
+	return nil, fmt.Errorf("iterator: no more servers to try")
 }
 
-func (r *Delegation) Authority(msg *dns.Msg, domain string) ([]string, bool) {
+func (it *DelegIter) Search(section []dns.RR, domain string) ([]string, bool) {
 	nss := []string{}
 
-	// Check authority section
-	for _, i := range msg.Ns {
+	for _, i := range section {
 		switch i.(type) {
 		case *dns.NS:
 			rr := i.(*dns.NS)
 			nm := strings.ToLower(rr.Header().Name)
 
+			// DelegIter found.
 			if nm == domain {
 				return nil, true
 			}
 
+			// Collect referals.
 			if strings.HasSuffix(domain, nm) {
 				nss = append(nss, strings.ToLower(rr.Ns))
 			}
@@ -102,7 +127,14 @@ func (r *Delegation) Authority(msg *dns.Msg, domain string) ([]string, bool) {
 	return nss, false
 }
 
-func (r *Delegation) PeekRandom(nss []string) (string, []string) {
-	i := rand.Intn(len(nss) - 1)
+func (it *DelegIter) PeekRandom(nss []string) (string, []string) {
+	n := len(nss) - 1
+
+	// rand.Intn panics if n <= 0.
+	if n == 0 {
+		return nss[0], nil
+	}
+
+	i := rand.Intn(n)
 	return nss[i], append(nss[:i], nss[i+1:]...)
 }

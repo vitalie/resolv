@@ -55,6 +55,21 @@ func (r *Resolver) Resolve(req *Request) <-chan *Response {
 				dns.RcodeToString[in.Rcode],
 				req,
 			)
+
+			if in.Rcode == dns.RcodeNameError {
+				err.IsNameError = true
+			}
+
+			c <- NewResponseErr(req, err)
+			return
+		}
+
+		// Truncation
+		if in.MsgHdr.Truncated {
+			err := NewDNSError(
+				"truncated",
+				req,
+			)
 			c <- NewResponseErr(req, err)
 			return
 		}

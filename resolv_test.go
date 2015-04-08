@@ -87,12 +87,22 @@ func TestResolveNames(t *testing.T) {
 	}
 }
 
-func TestIterator(t *testing.T) {
-	r := resolv.NewResolver()
-	d := resolv.NewDelegation(r)
+func TestDelegationIterator(t *testing.T) {
+	rs := resolv.NewResolver()
+	it := resolv.NewDelegIter(rs)
 
-	_, err := d.Resolve(context.Background(), "cherpec.com")
-	if err != nil {
-		t.Fatal(err)
+	r1 := <-it.Resolve(context.Background(), ".")
+	if r1.Err != nil {
+		t.Fatal(r1.Err)
+	}
+
+	r2 := <-it.Resolve(context.Background(), "com.")
+	if r2.Err != nil {
+		t.Fatal(r2.Err)
+	}
+
+	r3 := <-it.Resolve(context.Background(), "cherpec.com.")
+	if r3.Err != nil {
+		t.Fatal(r3.Err)
 	}
 }
