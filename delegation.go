@@ -17,6 +17,7 @@ const (
 type Iterator func(ctx context.Context, domain string, nss []string, n int, options ...RequestOption) (*Response, error)
 
 type Delegation struct {
+	Verbose  bool
 	resolver *Resolver
 }
 
@@ -24,9 +25,9 @@ func NewDelegation(r *Resolver) *Delegation {
 	return &Delegation{resolver: r}
 }
 
-func (r *Delegation) Resolve(ctx context.Context, domain string, options ...RequestOption) <-chan *Response {
-	out := make(chan *Response, 1)
+func (r *Delegation) Resolve(ctx context.Context, domain string, options ...RequestOption) (*Response, error) {
 	used := map[string]bool{}
+	fqdn := dns.Fqdn(strings.ToLower(domain))
 
 	var iterator Iterator
 	iterator = func(ctx context.Context, domain string, nss []string, n int, options ...RequestOption) (*Response, error) {
@@ -48,7 +49,9 @@ func (r *Delegation) Resolve(ctx context.Context, domain string, options ...Requ
 		c := r.resolver.Resolve(req)
 		select {
 		case resp := <-c:
-			log.Println("iterator:", resp)
+			if r.Verbose {
+				log.Println("iterator:", resp)
+			}
 
 			if resp.Err != nil {
 				return iterator(ctx, domain, nss, n-1, options...)
@@ -70,26 +73,18 @@ func (r *Delegation) Resolve(ctx context.Context, domain string, options ...Requ
 		}
 	}
 
-	go func() {
-		defer close(out)
-		// FIXME: ...
-		resp, _ := iterator(ctx, domain, RootServers, MaxIterations, options...)
-		out <- resp
-	}()
-
-	return out
+	return iterator(ctx, fqdn, RootServers, MaxIterations, options...)
 }
 
 func (r *Delegation) Found(msg *dns.Msg, domain string) bool {
-	fqdn := dns.Fqdn(domain)
-
 	// Anser section
 	if len(msg.Answer) > 0 {
 		for _, i := range msg.Answer {
 			switch i.(type) {
 			case *dns.NS:
 				rr := i.(*dns.NS)
-				if rr.Header().Name == fqdn {
+				nm := strings.ToLower(rr.Header().Name)
+				if nm == domain {
 					return true
 				}
 			default:
@@ -102,16 +97,15 @@ func (r *Delegation) Found(msg *dns.Msg, domain string) bool {
 }
 
 func (r *Delegation) Referals(msg *dns.Msg, domain string) []string {
-	fqdn := dns.Fqdn(domain)
-
 	// Authority section
 	nss := []string{}
 	for _, i := range msg.Ns {
 		switch i.(type) {
 		case *dns.NS:
 			rr := i.(*dns.NS)
-			if strings.HasSuffix(fqdn, rr.Header().Name) {
-				nss = append(nss, rr.Ns)
+			nm := strings.ToLower(rr.Header().Name)
+			if strings.HasSuffix(domain, nm) {
+				nss = append(nss, strings.ToLower(rr.Ns))
 			}
 		default:
 			log.Println("iterator: bad RR type", i, "for", domain)
