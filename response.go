@@ -7,7 +7,22 @@ import (
 )
 
 type Response struct {
+	Req *Request
 	Msg *dns.Msg
 	Rtt time.Duration
 	Err error
+}
+
+func NewResponse(req *Request) *Response {
+	r := &Response{
+		Req: req,
+	}
+
+	return r
+}
+
+func NewResponseErr(req *Request, err error) *Response {
+	r := NewResponse(req)
+	r.Err = err
+	return r
 }

@@ -23,7 +23,7 @@ func (r *Resolver) Resolve(req *Request) <-chan *Response {
 		defer func() {
 			// Unhandled error
 			if err := recover(); err != nil {
-				c <- &Response{Err: fmt.Errorf("resolve: %v", err)}
+				c <- NewResponseErr(req, fmt.Errorf("resolve: %v", err))
 			}
 			close(c)
 		}()
@@ -45,7 +45,7 @@ func (r *Resolver) Resolve(req *Request) <-chan *Response {
 		// - Retry
 		in, rtt, err := cli.Exchange(m, req.Addr)
 		if err != nil {
-			c <- &Response{Err: err}
+			c <- NewResponseErr(req, err)
 			return
 		}
 
@@ -55,14 +55,15 @@ func (r *Resolver) Resolve(req *Request) <-chan *Response {
 				dns.RcodeToString[in.Rcode],
 				req,
 			)
-			c <- &Response{Err: err}
+			c <- NewResponseErr(req, err)
 			return
 		}
 
-		c <- &Response{
-			Msg: in,
-			Rtt: rtt,
-		}
+		resp := NewResponse(req)
+		resp.Msg = in
+		resp.Rtt = rtt
+
+		c <- resp
 	}()
 
 	return c

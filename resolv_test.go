@@ -86,3 +86,14 @@ func TestResolveNames(t *testing.T) {
 		t.Errorf("responses missmatch: %v != %v", n, len(names))
 	}
 }
+
+func TestIterator(t *testing.T) {
+	r := resolv.NewResolver()
+	d := resolv.NewDelegation(r)
+
+	c := d.Resolve(context.Background(), "cherpec.com")
+	i := <-c
+	if i.Err != nil {
+		t.Fatal(i.Err)
+	}
+}
