@@ -50,22 +50,23 @@ func (r *Delegation) Resolve(ctx context.Context, domain string, options ...Requ
 		select {
 		case resp := <-c:
 			if r.Verbose {
-				log.Println("iterator:", resp)
+				log.Println("iterator: ===>", resp.Addr(), resp)
 			}
 
 			if resp.Err != nil {
 				return iterator(ctx, domain, nss, n-1, options...)
 			}
 
-			if r.Found(resp.Msg, domain) {
+			if referals, ok := r.Authority(resp.Msg, domain); ok {
 				return resp, nil
-			}
-
-			for _, ns := range r.Referals(resp.Msg, domain) {
-				if _, ok := used[ns]; !ok {
-					nss = append(nss, ns)
+			} else {
+				for _, ns := range referals {
+					if _, ok := used[ns]; !ok {
+						nss = append(nss, ns)
+					}
 				}
 			}
+
 			return iterator(ctx, domain, nss, n-1, options...)
 		case <-ctx.Done():
 			// FIXME: ...
@@ -76,34 +77,20 @@ func (r *Delegation) Resolve(ctx context.Context, domain string, options ...Requ
 	return iterator(ctx, fqdn, RootServers, MaxIterations, options...)
 }
 
-func (r *Delegation) Found(msg *dns.Msg, domain string) bool {
-	// Anser section
-	if len(msg.Answer) > 0 {
-		for _, i := range msg.Answer {
-			switch i.(type) {
-			case *dns.NS:
-				rr := i.(*dns.NS)
-				nm := strings.ToLower(rr.Header().Name)
-				if nm == domain {
-					return true
-				}
-			default:
-				log.Println("iterator: bad RR type", i, "for", domain)
-			}
-		}
-	}
-
-	return false
-}
-
-func (r *Delegation) Referals(msg *dns.Msg, domain string) []string {
-	// Authority section
+func (r *Delegation) Authority(msg *dns.Msg, domain string) ([]string, bool) {
 	nss := []string{}
+
+	// Check authority section
 	for _, i := range msg.Ns {
 		switch i.(type) {
 		case *dns.NS:
 			rr := i.(*dns.NS)
 			nm := strings.ToLower(rr.Header().Name)
+
+			if nm == domain {
+				return nil, true
+			}
+
 			if strings.HasSuffix(domain, nm) {
 				nss = append(nss, strings.ToLower(rr.Ns))
 			}
@@ -112,7 +99,7 @@ func (r *Delegation) Referals(msg *dns.Msg, domain string) []string {
 		}
 	}
 
-	return nss
+	return nss, false
 }
 
 func (r *Delegation) PeekRandom(nss []string) (string, []string) {

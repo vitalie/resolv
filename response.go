@@ -26,3 +26,11 @@ func NewResponseErr(req *Request, err error) *Response {
 	r.Err = err
 	return r
 }
+
+func (r *Response) Addr() string {
+	if r.Req == nil {
+		return "<nil>"
+	}
+
+	return r.Req.Addr
+}

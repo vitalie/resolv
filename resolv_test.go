@@ -91,9 +91,8 @@ func TestIterator(t *testing.T) {
 	r := resolv.NewResolver()
 	d := resolv.NewDelegation(r)
 
-	c := d.Resolve(context.Background(), "cherpec.com")
-	i := <-c
-	if i.Err != nil {
-		t.Fatal(i.Err)
+	_, err := d.Resolve(context.Background(), "cherpec.com")
+	if err != nil {
+		t.Fatal(err)
 	}
 }

@@ -16,7 +16,10 @@ func usage() {
 	os.Exit(2)
 }
 
+var verbose bool
+
 func main() {
+	flag.BoolVar(&verbose, "verbose", false, "Enable debug messages")
 	flag.Usage = usage
 	flag.Parse()
 
@@ -28,6 +31,7 @@ func main() {
 
 	r := resolv.NewResolver()
 	d := resolv.NewDelegation(r)
+	d.Verbose = verbose
 
 	resp, err := d.Resolve(context.Background(), args[0])
 	if err != nil {
