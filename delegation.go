@@ -10,7 +10,11 @@ import (
 	"golang.org/x/net/context"
 )
 
-type Iterator func(ctx context.Context, domain string, nss []string, options ...RequestOption) (*Response, error)
+const (
+	MaxIterations = 16
+)
+
+type Iterator func(ctx context.Context, domain string, nss []string, n int, options ...RequestOption) (*Response, error)
 
 type Delegation struct {
 	resolver *Resolver
@@ -25,14 +29,18 @@ func (r *Delegation) Resolve(ctx context.Context, domain string, options ...Requ
 	used := map[string]bool{}
 
 	var iterator Iterator
-	iterator = func(ctx context.Context, domain string, nss []string, options ...RequestOption) (*Response, error) {
+	iterator = func(ctx context.Context, domain string, nss []string, n int, options ...RequestOption) (*Response, error) {
+		if n == 0 {
+			return nil, fmt.Errorf("iterator: max iterations reached")
+		}
+
 		if len(nss) == 0 {
 			return nil, fmt.Errorf("iterator: no more servers to try")
 		}
 
 		ns, nss := r.PeekRandom(nss)
 		if _, ok := used[ns]; ok {
-			return iterator(ctx, domain, nss, options...)
+			return iterator(ctx, domain, nss, n-1, options...)
 		}
 		used[ns] = true
 
@@ -43,7 +51,7 @@ func (r *Delegation) Resolve(ctx context.Context, domain string, options ...Requ
 			log.Println("iterator:", resp)
 
 			if resp.Err != nil {
-				return iterator(ctx, domain, nss, options...)
+				return iterator(ctx, domain, nss, n-1, options...)
 			}
 
 			if r.Found(resp.Msg, domain) {
@@ -55,7 +63,7 @@ func (r *Delegation) Resolve(ctx context.Context, domain string, options ...Requ
 					nss = append(nss, ns)
 				}
 			}
-			return iterator(ctx, domain, nss, options...)
+			return iterator(ctx, domain, nss, n-1, options...)
 		case <-ctx.Done():
 			// FIXME: ...
 			return nil, nil
@@ -65,7 +73,7 @@ func (r *Delegation) Resolve(ctx context.Context, domain string, options ...Requ
 	go func() {
 		defer close(out)
 		// FIXME: ...
-		resp, _ := iterator(ctx, domain, RootServers, options...)
+		resp, _ := iterator(ctx, domain, RootServers, MaxIterations, options...)
 		out <- resp
 	}()
 
