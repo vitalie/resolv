@@ -1,7 +1,7 @@
 package resolv
 
 const (
-	PortDefault = "53"
+	DefaultPort = "53"
 )
 
 var RootServers = []string{

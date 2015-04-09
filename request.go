@@ -27,7 +27,7 @@ func SetCHAOSClass(req *Request) {
 
 func NewRequest(addr, name string, type_ uint16, options ...RequestOption) *Request {
 	if !strings.Contains(addr, ":") {
-		addr = net.JoinHostPort(addr, PortDefault)
+		addr = net.JoinHostPort(addr, DefaultPort)
 	}
 
 	req := &Request{
