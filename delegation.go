@@ -127,6 +127,8 @@ func (it *DelegIter) Search(section []dns.RR, domain string) ([]string, bool) {
 	return nss, false
 }
 
+// PeekRandom peeks a random name server from nss list
+// returning the selected server and the remaining servers.
 func (it *DelegIter) PeekRandom(nss []string) (string, []string) {
 	n := len(nss) - 1
 
