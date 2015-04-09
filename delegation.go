@@ -13,33 +13,33 @@ const (
 	MaxIterations = 16
 )
 
-type Delegation struct {
+type DelegationInfo struct {
 	Path []*Response
 	Err  error
 }
 
-type DelegIter struct {
+type Delegation struct {
 	Verbose bool
 	rs      *Resolver
 }
 
-func NewDelegIter(r *Resolver) *DelegIter {
-	return &DelegIter{rs: r}
+func NewDelegation(r *Resolver) *Delegation {
+	return &Delegation{rs: r}
 }
 
-func (it *DelegIter) Resolve(ctx context.Context, domain string) <-chan *Delegation {
-	out := make(chan *Delegation, 1)
+func (it *Delegation) Resolve(ctx context.Context, domain string) <-chan *DelegationInfo {
+	out := make(chan *DelegationInfo, 1)
 
 	go func() {
 		defer close(out)
 		path, err := it.run(ctx, domain, RootServers...)
-		out <- &Delegation{Path: path, Err: err}
+		out <- &DelegationInfo{Path: path, Err: err}
 	}()
 
 	return out
 }
 
-func (it *DelegIter) run(ctx context.Context, domain string, nss ...string) ([]*Response, error) {
+func (it *Delegation) run(ctx context.Context, domain string, nss ...string) ([]*Response, error) {
 	var ns string
 
 	skip := map[string]bool{}
@@ -100,7 +100,7 @@ func (it *DelegIter) run(ctx context.Context, domain string, nss ...string) ([]*
 	return nil, fmt.Errorf("iterator: no more servers to try")
 }
 
-func (it *DelegIter) Search(section []dns.RR, domain string) ([]string, bool) {
+func (it *Delegation) Search(section []dns.RR, domain string) ([]string, bool) {
 	nss := []string{}
 
 	for _, i := range section {
@@ -109,7 +109,7 @@ func (it *DelegIter) Search(section []dns.RR, domain string) ([]string, bool) {
 			rr := i.(*dns.NS)
 			nm := strings.ToLower(rr.Header().Name)
 
-			// DelegIter found.
+			// Delegation found.
 			if nm == domain {
 				return nil, true
 			}

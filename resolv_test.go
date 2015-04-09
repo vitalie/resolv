@@ -118,7 +118,7 @@ func TestResolveNames(t *testing.T) {
 
 func TestDelegationIterator(t *testing.T) {
 	rs := resolv.NewResolver()
-	it := resolv.NewDelegIter(rs)
+	it := resolv.NewDelegation(rs)
 
 	r1 := <-it.Resolve(context.Background(), ".")
 	if r1.Err != nil {
