@@ -62,6 +62,27 @@ func TestResolve(t *testing.T) {
 	}
 }
 
+func TestTimeout(t *testing.T) {
+	r := resolv.NewResolver()
+
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	req := resolv.NewRequest("ns1.luadns.net", "google.com", dns.TypeA)
+	resp := <-r.Resolve(req)
+	if resp.Err != nil {
+		err, ok := resp.Err.(*resolv.DNSError)
+		if !ok {
+			t.Errorf("expected DNSError got: %v", resp.Err)
+		}
+
+		if !err.Timeout() {
+			t.Errorf("expected timeout got: %v", resp.Err)
+		}
+	}
+}
+
 func TestResolveTypes(t *testing.T) {
 	r := resolv.NewResolver()
 
