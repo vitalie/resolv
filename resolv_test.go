@@ -22,6 +22,21 @@ func TestShort(t *testing.T) {
 	}
 }
 
+// Simple resolve benchmark, run with:
+//	go test -bench=.
+func BenchmarkResolve(b *testing.B) {
+	r := resolv.NewResolver()
+	req := resolv.NewRequest("8.8.8.8", "cherpec.com", dns.TypeA)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		resp := <-r.Resolve(req)
+		if resp.Err != nil {
+			b.Fatal(resp.Err)
+		}
+	}
+}
+
 func TestResolve(t *testing.T) {
 	r := resolv.NewResolver()
 
