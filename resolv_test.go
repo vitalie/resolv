@@ -16,12 +16,6 @@ var nss = []string{
 	"ns5.luadns.net",
 }
 
-func TestShort(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping test in short mode.")
-	}
-}
-
 // Simple resolve benchmark, run with:
 //	go test -bench=.
 func BenchmarkResolve(b *testing.B) {
@@ -63,12 +57,11 @@ func TestResolve(t *testing.T) {
 }
 
 func TestTimeout(t *testing.T) {
-	r := resolv.NewResolver()
-
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
 
+	r := resolv.NewResolver()
 	req := resolv.NewRequest("ns1.luadns.net", "google.com", dns.TypeA)
 	resp := <-r.Resolve(req)
 	if resp.Err != nil {
