@@ -27,19 +27,19 @@ func NewDelegation(r *Resolver) *Delegation {
 	return &Delegation{rs: r}
 }
 
-func (it *Delegation) Resolve(ctx context.Context, domain string) <-chan *DelegationInfo {
+func (d *Delegation) Resolve(ctx context.Context, domain string) <-chan *DelegationInfo {
 	out := make(chan *DelegationInfo, 1)
 
 	go func() {
 		defer close(out)
-		path, err := it.run(ctx, domain, RootServers...)
+		path, err := d.run(ctx, domain, RootServers...)
 		out <- &DelegationInfo{Path: path, Err: err}
 	}()
 
 	return out
 }
 
-func (it *Delegation) run(ctx context.Context, domain string, nss ...string) ([]*Response, error) {
+func (d *Delegation) run(ctx context.Context, domain string, nss ...string) ([]*Response, error) {
 	var ns string
 
 	skip := map[string]bool{}
@@ -55,10 +55,10 @@ func (it *Delegation) run(ctx context.Context, domain string, nss ...string) ([]
 		skip[ns] = true
 
 		req := NewRequest(ns, fqdn, dns.TypeNS)
-		c := it.rs.Resolve(req)
+		c := d.rs.Resolve(req)
 		select {
 		case resp := <-c:
-			if it.Verbose {
+			if d.Verbose {
 				log.Println("iterator: servers=", nss)
 				log.Println("iterator: ===>", resp.Addr(), resp)
 			}
@@ -76,11 +76,11 @@ func (it *Delegation) run(ctx context.Context, domain string, nss ...string) ([]
 			}
 
 			path = append(path, resp)
-			if _, ok := it.Search(resp.Msg.Answer, fqdn); ok {
+			if _, ok := d.search(resp.Msg.Answer, fqdn); ok {
 				return path, nil
 			}
 
-			if referals, ok := it.Search(resp.Msg.Ns, fqdn); ok {
+			if referals, ok := d.search(resp.Msg.Ns, fqdn); ok {
 				return path, nil
 			} else {
 				if len(referals) > 0 {
@@ -100,7 +100,7 @@ func (it *Delegation) run(ctx context.Context, domain string, nss ...string) ([]
 	return nil, fmt.Errorf("iterator: no more servers to try")
 }
 
-func (it *Delegation) Search(section []dns.RR, domain string) ([]string, bool) {
+func (d *Delegation) search(section []dns.RR, domain string) ([]string, bool) {
 	nss := []string{}
 
 	for _, i := range section {
