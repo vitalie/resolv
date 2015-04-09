@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	"github.com/miekg/dns"
+	"github.com/vitalie/resolv"
 	"golang.org/x/net/context"
-	"luadns.com/resolv"
 )
 
 var nss = []string{

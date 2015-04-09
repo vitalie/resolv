@@ -2,6 +2,8 @@ package resolv
 
 import (
 	"fmt"
+	"log"
+	"net"
 	"sync"
 
 	"github.com/miekg/dns"
@@ -23,6 +25,7 @@ func (r *Resolver) Resolve(req *Request) <-chan *Response {
 		defer func() {
 			// Unhandled error
 			if err := recover(); err != nil {
+				log.Println("resolv: recovered from", err)
 				c <- NewResponseErr(req, fmt.Errorf("resolve: %v", err))
 			}
 			close(c)
@@ -38,13 +41,14 @@ func (r *Resolver) Resolve(req *Request) <-chan *Response {
 		cli := new(dns.Client)
 		cli.Net = req.Mode
 
-		// TODO:
-		// https://godoc.org/github.com/miekg/dns#Client
-		// - Truncated response
-		// - Timeout
-		// - Retry
 		in, rtt, err := cli.Exchange(m, req.Addr)
 		if err != nil {
+			if nerr, ok := err.(*net.OpError); ok && nerr.Timeout() {
+				err := NewDNSError("timeout", req)
+				err.IsTimeout = true
+				c <- NewResponseErr(req, err)
+				return
+			}
 			c <- NewResponseErr(req, err)
 			return
 		}
