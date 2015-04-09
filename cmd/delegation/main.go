@@ -8,8 +8,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/vitalie/resolv"
 	"golang.org/x/net/context"
-	"luadns.com/resolv"
 )
 
 func usage() {
