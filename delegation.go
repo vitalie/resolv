@@ -19,7 +19,7 @@ type DelegationInfo struct {
 }
 
 type Delegation struct {
-	Verbose bool
+	Debug bool
 	rs      *Resolver
 }
 
@@ -58,7 +58,7 @@ func (d *Delegation) run(ctx context.Context, domain string, nss ...string) ([]*
 		c := d.rs.Resolve(req)
 		select {
 		case resp := <-c:
-			if d.Verbose {
+			if d.Debug {
 				log.Println("iterator: servers=", nss)
 				log.Println("iterator: ===>", resp.Addr(), resp)
 			}

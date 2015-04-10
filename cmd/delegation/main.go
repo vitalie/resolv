@@ -35,7 +35,7 @@ func main() {
 
 	rs := resolv.NewResolver()
 	it := resolv.NewDelegation(rs)
-	it.Verbose = verbose
+	it.Debug = verbose
 
 	r := <-it.Resolve(context.Background(), args[0])
 	if r.Err != nil {
