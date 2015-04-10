@@ -29,7 +29,7 @@ import (
 func main() {
     r := resolv.NewResolver()
 
-    // UDP Mode
+    // Issue an UDP request using default options.
     req := resolv.NewRequest("ns1.luadns.net", "cherpec.com", dns.TypeA)
     resp := <-r.Resolve(req)
     if resp.Err != nil {
