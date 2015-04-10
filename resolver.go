@@ -34,7 +34,7 @@ func (r *Resolver) Resolve(req *Request) <-chan *Response {
 		// Prepare message
 		m := new(dns.Msg)
 		m.Id = dns.Id()
-		m.RecursionDesired = true
+		m.RecursionDesired = req.Recurse
 		m.Question = make([]dns.Question, 1)
 		m.Question[0] = dns.Question{req.Name, req.Type, req.Class}
 

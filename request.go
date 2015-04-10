@@ -21,21 +21,17 @@ type Request struct {
 type RequestOption func(*Request)
 
 // SetTCPMode configures the query to run in TCP mode.
-func SetTCPMode() RequestOption {
-	return func(req *Request) {
-		req.Mode = "tcp"
-	}
+func SetTCPMode(req *Request) {
+	req.Mode = "tcp"
 }
 
 // SetCHAOSClass sets the class to CHAOS for a request.
-func SetCHAOSClass() RequestOption {
-	return func(req *Request) {
-		req.Class = dns.ClassCHAOS
-	}
+func SetCHAOSClass(req *Request) {
+	req.Class = dns.ClassCHAOS
 }
 
 // SetRD enables recursion for a request.
-func SetRD(recurse bool) RequestOption {
+func SetRD(recurse bool) func(*Request) {
 	return func(req *Request) {
 		req.Recurse = recurse
 	}

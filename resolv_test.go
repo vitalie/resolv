@@ -20,7 +20,7 @@ var nss = []string{
 //	go test -bench=.
 func BenchmarkResolve(b *testing.B) {
 	r := resolv.NewResolver()
-	req := resolv.NewRequest("8.8.8.8", "cherpec.com", dns.TypeA)
+	req := resolv.NewRequest("ns1.luadns.net", "cherpec.com", dns.TypeA)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -81,7 +81,7 @@ func TestResolveTypes(t *testing.T) {
 
 	// Query multiple types
 	types := []uint16{dns.TypeA, dns.TypeNS, dns.TypeMX}
-	c := r.ResolveTypes(context.Background(), "8.8.8.8", "cherpec.com", types)
+	c := r.ResolveTypes(context.Background(), "ns1.luadns.net", "cherpec.com", types)
 
 	n := 0
 	for resp := range c {
@@ -101,7 +101,7 @@ func TestResolveNames(t *testing.T) {
 
 	// Query multiple names
 	names := []string{"cherpec.com", "www.cherpec.com"}
-	c := r.ResolveNames(context.Background(), "8.8.8.8", dns.TypeA, names)
+	c := r.ResolveNames(context.Background(), "ns1.luadns.net", dns.TypeA, names)
 
 	n := 0
 	for resp := range c {
