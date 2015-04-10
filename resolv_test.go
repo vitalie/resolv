@@ -84,7 +84,7 @@ func TestFactoryFromNames(t *testing.T) {
 	reqs := fact.FromNames("ns1.luadns.net", dns.TypeA, "cherpec.com", "www.cherpec.com")
 
 	n := 0
-	c := r.Exchange(context.Background(), reqs...)
+	c := r.FanIn(context.Background(), reqs...)
 	for resp := range c {
 		if resp.Err != nil {
 			t.Error(resp.Err)
@@ -105,7 +105,7 @@ func TestFactoryFromTypes(t *testing.T) {
 	reqs := fact.FromTypes("ns1.luadns.net", "cherpec.com", dns.TypeA, dns.TypeNS, dns.TypeMX)
 
 	n := 0
-	c := r.Exchange(context.Background(), reqs...)
+	c := r.FanIn(context.Background(), reqs...)
 	for resp := range c {
 		if resp.Err != nil {
 			t.Error(resp.Err)

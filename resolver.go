@@ -90,7 +90,7 @@ func (r *Resolver) Resolve(req *Request) <-chan *Response {
 	return c
 }
 
-func (r *Resolver) Exchange(ctx context.Context, reqs ...*Request) <-chan *Response {
+func (r *Resolver) FanIn(ctx context.Context, reqs ...*Request) <-chan *Response {
 	cs := []<-chan *Response{}
 
 	for i := 0; i < len(reqs); i++ {
