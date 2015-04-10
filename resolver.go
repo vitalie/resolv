@@ -10,28 +10,36 @@ import (
 	"golang.org/x/net/context"
 )
 
+// Resolver represents an resolver, an application
+// can have multiple resolvers.
 type Resolver struct {
 }
 
+// NewResolver creates a new resolver with default options.
 func NewResolver() *Resolver {
 	return &Resolver{}
 }
 
+// Resolve issue the DNS request returning immediately,
+// it returns the response through a channel which is
+// closed automatically when the request is finished.
 func (r *Resolver) Resolve(req *Request) <-chan *Response {
-	// Buffered channel to avoid goroutine leaking
+	// Buffered channel to avoid goroutine leaking.
 	c := make(chan *Response, 1)
 
+	// Launch a gorouting which will resolve the request
+	// and will return the result when it's ready.
 	go func() {
 		defer func() {
-			// Unhandled error
+			// Handle unexpected errors from the DNS librariy.
 			if err := recover(); err != nil {
-				log.Println("resolv: recovered from", err)
+				log.Println("resolv: unexpected error:", err)
 				c <- &Response{Err: fmt.Errorf("resolve: %v", err)}
 			}
 			close(c)
 		}()
 
-		// Prepare message
+		// Prepare the message.
 		m := new(dns.Msg)
 		m.Id = dns.Id()
 		m.RecursionDesired = req.Recurse
@@ -41,19 +49,23 @@ func (r *Resolver) Resolve(req *Request) <-chan *Response {
 		cli := new(dns.Client)
 		cli.Net = req.Mode
 
+		// Issue synchronous request.
 		in, rtt, err := cli.Exchange(m, req.Addr)
 		if err != nil {
+			// Timeout.
 			if nerr, ok := err.(*net.OpError); ok && nerr.Timeout() {
 				err := NewDNSError("timeout", req)
 				err.IsTimeout = true
 				c <- &Response{Err: err}
 				return
 			}
+
+			// Other error.
 			c <- &Response{Err: err}
 			return
 		}
 
-		// DNS error
+		// Check the RCODE from the message.
 		if in.Rcode != dns.RcodeSuccess {
 			err := NewDNSError(
 				dns.RcodeToString[in.Rcode],
@@ -68,7 +80,7 @@ func (r *Resolver) Resolve(req *Request) <-chan *Response {
 			return
 		}
 
-		// Truncation
+		// Handle trruncated messages.
 		if in.MsgHdr.Truncated {
 			err := NewDNSError(
 				"truncated",
@@ -90,6 +102,7 @@ func (r *Resolver) Resolve(req *Request) <-chan *Response {
 	return c
 }
 
+// FanIn issues multiple requests and serializes the responses through the returned channel.
 func (r *Resolver) FanIn(ctx context.Context, reqs ...*Request) <-chan *Response {
 	cs := []<-chan *Response{}
 
@@ -101,6 +114,7 @@ func (r *Resolver) FanIn(ctx context.Context, reqs ...*Request) <-chan *Response
 	return r.merge(ctx, cs...)
 }
 
+// merge merges multiple channels into a single channel.
 func (r *Resolver) merge(ctx context.Context, cs ...<-chan *Response) <-chan *Response {
 	var wg sync.WaitGroup
 	out := make(chan *Response)
