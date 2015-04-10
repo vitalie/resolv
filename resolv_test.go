@@ -116,7 +116,7 @@ func TestResolveNames(t *testing.T) {
 	}
 }
 
-func TestDelegationIterator(t *testing.T) {
+func TestDelegation(t *testing.T) {
 	rs := resolv.NewResolver()
 	it := resolv.NewDelegation(rs)
 
