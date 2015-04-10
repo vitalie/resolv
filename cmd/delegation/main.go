@@ -18,12 +18,12 @@ func usage() {
 	os.Exit(2)
 }
 
-var verbose bool
+var debug bool
 
 func main() {
 	rand.Seed(time.Now().UnixNano())
 
-	flag.BoolVar(&verbose, "verbose", false, "Enable debug messages")
+	flag.BoolVar(&debug, "debug", false, "Enable debug messages")
 	flag.Usage = usage
 	flag.Parse()
 
@@ -35,7 +35,7 @@ func main() {
 
 	rs := resolv.NewResolver()
 	it := resolv.NewDelegation(rs)
-	it.Debug = verbose
+	it.Debug = debug
 
 	r := <-it.Resolve(context.Background(), args[0])
 	if r.Err != nil {
