@@ -31,10 +31,8 @@ func SetCHAOSClass(req *Request) {
 }
 
 // SetRD enables recursion for a request.
-func SetRD(recurse bool) func(*Request) {
-	return func(req *Request) {
-		req.Recurse = recurse
-	}
+func SetRD(req *Request) {
+	req.Recurse = true
 }
 
 func NewRequest(addr, name string, type_ uint16, options ...RequestOption) *Request {
