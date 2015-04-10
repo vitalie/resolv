@@ -26,7 +26,7 @@ func (r *Resolver) Resolve(req *Request) <-chan *Response {
 			// Unhandled error
 			if err := recover(); err != nil {
 				log.Println("resolv: recovered from", err)
-				c <- NewResponseErr(req, fmt.Errorf("resolve: %v", err))
+				c <- &Response{Err: fmt.Errorf("resolve: %v", err)}
 			}
 			close(c)
 		}()
@@ -46,10 +46,10 @@ func (r *Resolver) Resolve(req *Request) <-chan *Response {
 			if nerr, ok := err.(*net.OpError); ok && nerr.Timeout() {
 				err := NewDNSError("timeout", req)
 				err.IsTimeout = true
-				c <- NewResponseErr(req, err)
+				c <- &Response{Err: err}
 				return
 			}
-			c <- NewResponseErr(req, err)
+			c <- &Response{Err: err}
 			return
 		}
 
@@ -64,7 +64,7 @@ func (r *Resolver) Resolve(req *Request) <-chan *Response {
 				err.IsNameError = true
 			}
 
-			c <- NewResponseErr(req, err)
+			c <- &Response{Err: err}
 			return
 		}
 
@@ -74,13 +74,15 @@ func (r *Resolver) Resolve(req *Request) <-chan *Response {
 				"truncated",
 				req,
 			)
-			c <- NewResponseErr(req, err)
+			c <- &Response{Err: err}
 			return
 		}
 
-		resp := NewResponse(req)
-		resp.Msg = in
-		resp.Rtt = rtt
+		resp := &Response{
+			Req: req,
+			Msg: in,
+			Rtt: rtt,
+		}
 
 		c <- resp
 	}()

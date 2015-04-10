@@ -21,12 +21,6 @@ func NewResponse(req *Request) *Response {
 	return r
 }
 
-func NewResponseErr(req *Request, err error) *Response {
-	r := NewResponse(req)
-	r.Err = err
-	return r
-}
-
 func (r *Response) Addr() string {
 	if r.Req == nil {
 		return "<nil>"
