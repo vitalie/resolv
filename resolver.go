@@ -133,25 +133,3 @@ func (r *Resolver) merge(ctx context.Context, cs ...<-chan *Response) <-chan *Re
 
 	return out
 }
-
-func (r *Resolver) ResolveTypes(ctx context.Context, addr string, name string, types []uint16, options ...RequestOption) <-chan *Response {
-	reqs := []*Request{}
-
-	for i := 0; i < len(types); i++ {
-		req := NewRequest(addr, name, types[i], options...)
-		reqs = append(reqs, req)
-	}
-
-	return r.Exchange(ctx, reqs...)
-}
-
-func (r *Resolver) ResolveNames(ctx context.Context, addr string, type_ uint16, names []string, options ...RequestOption) <-chan *Response {
-	reqs := []*Request{}
-
-	for i := 0; i < len(names); i++ {
-		req := NewRequest(addr, names[i], type_, options...)
-		reqs = append(reqs, req)
-	}
-
-	return r.Exchange(ctx, reqs...)
-}

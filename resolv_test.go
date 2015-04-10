@@ -76,34 +76,15 @@ func TestTimeout(t *testing.T) {
 	}
 }
 
-func TestResolveTypes(t *testing.T) {
-	r := resolv.NewResolver()
-
-	// Query multiple types
-	types := []uint16{dns.TypeA, dns.TypeNS, dns.TypeMX}
-	c := r.ResolveTypes(context.Background(), "ns1.luadns.net", "cherpec.com", types)
-
-	n := 0
-	for resp := range c {
-		if resp.Err != nil {
-			t.Error(resp.Err)
-		}
-		n++
-	}
-
-	if n != len(types) {
-		t.Errorf("responses missmatch: %v != %v", n, len(types))
-	}
-}
-
-func TestResolveNames(t *testing.T) {
+func TestFactoryFromNames(t *testing.T) {
 	r := resolv.NewResolver()
 
 	// Query multiple names
-	names := []string{"cherpec.com", "www.cherpec.com"}
-	c := r.ResolveNames(context.Background(), "ns1.luadns.net", dns.TypeA, names)
+	fact := resolv.NewRequestFactory()
+	reqs := fact.FromNames("ns1.luadns.net", dns.TypeA, "cherpec.com", "www.cherpec.com")
 
 	n := 0
+	c := r.Exchange(context.Background(), reqs...)
 	for resp := range c {
 		if resp.Err != nil {
 			t.Error(resp.Err)
@@ -111,8 +92,29 @@ func TestResolveNames(t *testing.T) {
 		n++
 	}
 
-	if n != len(names) {
-		t.Errorf("responses missmatch: %v != %v", n, len(names))
+	if n != len(reqs) {
+		t.Errorf("responses missmatch: %v != %v", n, len(reqs))
+	}
+}
+
+func TestFactoryFromTypes(t *testing.T) {
+	r := resolv.NewResolver()
+
+	// Query multiple types
+	fact := resolv.NewRequestFactory()
+	reqs := fact.FromTypes("ns1.luadns.net", "cherpec.com", dns.TypeA, dns.TypeNS, dns.TypeMX)
+
+	n := 0
+	c := r.Exchange(context.Background(), reqs...)
+	for resp := range c {
+		if resp.Err != nil {
+			t.Error(resp.Err)
+		}
+		n++
+	}
+
+	if n != len(reqs) {
+		t.Errorf("responses missmatch: %v != %v", n, len(reqs))
 	}
 }
 
