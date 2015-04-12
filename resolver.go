@@ -128,6 +128,7 @@ func (r *Resolver) merge(ctx context.Context, cs ...<-chan *Response) <-chan *Re
 			select {
 			case out <- resp:
 			case <-ctx.Done():
+				out <- &Response{Err: ctx.Err()}
 				return
 			}
 		}
