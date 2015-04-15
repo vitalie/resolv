@@ -137,12 +137,17 @@ func TestDelegation(t *testing.T) {
 	if r3.Err != nil {
 		t.Fatal(r3.Err)
 	}
+}
+
+func TestContext(t *testing.T) {
+	rs := resolv.NewResolver()
+	it := resolv.NewDelegation(rs)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
 	defer cancel()
 
-	r4 := <-it.Resolve(ctx, "cherpec.com")
-	if r4.Err == nil {
-		t.Fatal("expecting timeout got:", r4)
+	r := <-it.Resolve(ctx, "cherpec.com")
+	if r.Err == nil {
+		t.Fatal("expecting timeout got:", r)
 	}
 }
