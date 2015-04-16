@@ -58,10 +58,10 @@ func (it *Iterator) LookupIPv4(ctx context.Context, host string) ([]net.IP, erro
 
 // Resolve looks up the name starting from root servers following referals.
 func (it *Iterator) Resolve(ctx context.Context, name string, type_ uint16) <-chan *Response {
-	return it.run(ctx, name, type_, 0, map[string]bool{}, RootServers...)
+	return it.run(ctx, name, type_, 0, 0, map[string]bool{}, RootServers...)
 }
 
-func (it *Iterator) run(ctx context.Context, name string, type_ uint16, depth int, skip map[string]bool, nss ...string) <-chan *Response {
+func (it *Iterator) run(ctx context.Context, name string, type_ uint16, depth, i int, skip map[string]bool, nss ...string) <-chan *Response {
 	out := make(chan *Response, MaxDepth)
 	defer close(out)
 
@@ -72,6 +72,12 @@ func (it *Iterator) run(ctx context.Context, name string, type_ uint16, depth in
 
 	for len(nss) > 0 {
 		var ns string
+
+		i++
+		if i > MaxIterations {
+			out <- &Response{Err: fmt.Errorf("iterator: max iterations reached")}
+			return out
+		}
 
 		// Peek random name server and mark it as used.
 		ns, nss = peekRandom(nss)
@@ -114,7 +120,7 @@ func (it *Iterator) run(ctx context.Context, name string, type_ uint16, depth in
 				return out
 			} else {
 				if len(referals) > 0 {
-					for resp := range it.run(ctx, name, type_, depth+1, skip, referals...) {
+					for resp := range it.run(ctx, name, type_, depth+1, i, skip, referals...) {
 						out <- resp
 					}
 					return out
