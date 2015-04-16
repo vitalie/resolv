@@ -20,24 +20,6 @@ func NewResolver() *Resolver {
 	return &Resolver{}
 }
 
-// LookupIP looks up host returning IPv4 addresses.
-// func (r *Resolver) LookupIP4(ctx context.Context, host string) ([]net.IP, error) {
-// 	it := NewIterator(r)
-
-// 	var ips []net.IP
-// 	for _, resp := range it.Resolve(ctx, host, dns.TypeA) {
-// 		if resp.Err != nil {
-// 			return nil, resp.Err
-// 		}
-
-// 		for _, rr := range resp.Answer(dns.TypeA) {
-// 			ips = append(ips)
-// 		}
-// 	}
-
-// 	return ips, nil
-// }
-
 // Resolve issue the DNS request returning immediately,
 // it returns the response through a channel which is
 // closed automatically when the request is finished.
