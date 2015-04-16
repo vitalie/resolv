@@ -34,14 +34,12 @@ func (it *Iterator) LookupIPv4(ctx context.Context, host string) ([]net.IP, erro
 	}
 
 	var ips []net.IP
-	// var cname map[string]string
 	for _, i := range last.Msg.Answer {
 		if nm := dns.Fqdn(strings.ToLower(i.Header().Name)); nm == fqdn {
 			switch i.(type) {
 			case (*dns.CNAME):
 				rr := i.(*dns.CNAME)
 				tg := dns.Fqdn(strings.ToLower(rr.Target))
-				// cname[nm] = tg
 				return it.LookupIPv4(ctx, tg)
 			case (*dns.A):
 				rr := i.(*dns.A)
@@ -114,10 +112,13 @@ func (it *Iterator) run(ctx context.Context, name string, type_ uint16, depth, i
 				return out
 			}
 
-			if referals, ok := it.lookup(resp.Msg, fqdn); ok {
-				// FIXME: Handle CNAME.
-				out <- resp
-				return out
+			if referals, cname, ok := it.lookup(resp.Msg, fqdn); ok {
+				if cname != "" {
+					return it.run(ctx, cname, type_, depth+1, i, map[string]bool{}, RootServers...)
+				} else {
+					out <- resp
+					return out
+				}
 			} else {
 				if len(referals) > 0 {
 					return it.run(ctx, name, type_, depth+1, i, skip, referals...)
@@ -133,16 +134,26 @@ func (it *Iterator) run(ctx context.Context, name string, type_ uint16, depth, i
 	return out
 }
 
-// lookup looks up for DNS records in the msg where name equals with
-// fqdn and returns true, if no records are found the it returns false
-// together with collected referals.
-func (it *Iterator) lookup(msg *dns.Msg, fqdn string) ([]string, bool) {
+func (it *Iterator) lookup(msg *dns.Msg, fqdn string) ([]string, string, bool) {
+	cname := ""
+	found := false
+
 	// Look for fqdn in the Answer section.
 	for _, i := range msg.Answer {
 		nm := strings.ToLower(i.Header().Name)
 		if nm == fqdn {
-			return nil, true
+			found = true
 		}
+
+		switch i.(type) {
+		case (*dns.CNAME):
+			rr := i.(*dns.CNAME)
+			cname = dns.Fqdn(strings.ToLower(rr.Target))
+		}
+	}
+
+	if found {
+		return nil, cname, found
 	}
 
 	// If fqdn is not found then collect and return referals.
@@ -161,5 +172,5 @@ func (it *Iterator) lookup(msg *dns.Msg, fqdn string) ([]string, bool) {
 		}
 	}
 
-	return nss, false
+	return nss, cname, found
 }
