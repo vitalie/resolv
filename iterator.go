@@ -35,19 +35,12 @@ func (it *Iterator) LookupIPv4(ctx context.Context, host string) ([]net.IP, erro
 
 	var ips []net.IP
 	for _, i := range last.Msg.Answer {
-		if nm := dns.Fqdn(strings.ToLower(i.Header().Name)); nm == fqdn {
-			switch i.(type) {
-			case (*dns.CNAME):
-				rr := i.(*dns.CNAME)
-				tg := dns.Fqdn(strings.ToLower(rr.Target))
-				return it.LookupIPv4(ctx, tg)
-			case (*dns.A):
-				rr := i.(*dns.A)
-				ips = append(ips, rr.A)
-			default:
-			}
-		} else {
-			return nil, fmt.Errorf("iterator: unexpected name: %v", nm)
+		switch i.(type) {
+		case (*dns.A):
+			rr := i.(*dns.A)
+			ips = append(ips, rr.A)
+		default:
+			return nil, fmt.Errorf("iterator: unexpected record: %v", i)
 		}
 	}
 
