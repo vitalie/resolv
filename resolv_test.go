@@ -119,35 +119,47 @@ func TestFactoryFromTypes(t *testing.T) {
 	}
 }
 
-func TestDelegation(t *testing.T) {
-	rs := resolv.NewResolver()
-	it := resolv.NewDelegation(rs)
-
-	r1 := <-it.Resolve(context.Background(), ".")
-	if r1.Err != nil {
-		t.Fatal(r1.Err)
-	}
-
-	r2 := <-it.Resolve(context.Background(), "com.")
-	if r2.Err != nil {
-		t.Fatal(r2.Err)
-	}
-
-	r3 := <-it.Resolve(context.Background(), "cherpec.com.")
-	if r3.Err != nil {
-		t.Fatal(r3.Err)
-	}
-}
-
 func TestContext(t *testing.T) {
 	rs := resolv.NewResolver()
-	it := resolv.NewDelegation(rs)
+	it := resolv.NewIterator(rs)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
 	defer cancel()
 
-	r := <-it.Resolve(ctx, "cherpec.com")
-	if r.Err == nil {
-		t.Fatal("expecting timeout got:", r)
+	_, err := it.LookupIPv4(ctx, "cherpec.com.")
+	if err == nil {
+		t.Fatal("expecting timeout got:", err)
 	}
+}
+
+func TestIterator(t *testing.T) {
+	rs := resolv.NewResolver()
+	it := resolv.NewIterator(rs)
+
+	ctx := context.Background()
+	ips, err := it.LookupIPv4(ctx, "www.cherpec.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(ips) == 0 {
+		t.Fatal("expecting one or more IPv4 addresses, got", ips)
+	}
+
+	// ctx := context.Background()
+	// r := <-it.LookupIPv4(ctx, "www.cherpec.com")
+	// if r.Err != nil {
+	// 	t.Fatal(r.Err)
+	// }
+
+	// cnames := map[string]string{
+	// 	"www.cherpec.com.":       "cherpec.herokuapp.com.",
+	// 	"cherpec.herokuapp.com.": "us-east-1-a.route.herokuapp.com.",
+	// }
+
+	// for k, v := range cnames {
+	// 	if r.Cname[k] != v {
+	// 		t.Fatalf("expecting %v=>%v, got %v=>%v", k, v, k, r.Cname[k])
+	// 	}
+	// }
 }

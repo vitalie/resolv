@@ -42,7 +42,7 @@ func NewRequest(addr, name string, type_ uint16, options ...RequestOption) *Requ
 
 	req := &Request{
 		Addr:  addr,
-		Name:  dns.Fqdn(name),
+		Name:  dns.Fqdn(strings.ToLower(name)),
 		Type:  type_,
 		Class: dns.ClassINET,
 	}

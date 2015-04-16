@@ -1,7 +1,9 @@
 package resolv
 
 const (
-	DefaultPort = "53"
+	DefaultPort   = "53"
+	MaxDepth      = 16
+	MaxIterations = 32
 )
 
 var RootServers = []string{
