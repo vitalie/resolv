@@ -50,7 +50,7 @@ func TestResolve(t *testing.T) {
 	}
 
 	// CHAOS class
-	req = resolv.NewRequest("ns1.linode.com", "version.bind", dns.TypeTXT, resolv.SetCHAOSClass)
+	req = resolv.NewRequest("ns1.softlayer.com", "version.bind", dns.TypeTXT, resolv.SetCHAOSClass)
 	resp = <-r.Resolve(req)
 	if resp.Err != nil {
 		t.Fatal(resp.Err)
@@ -145,7 +145,7 @@ func TestIterator(t *testing.T) {
 		t.Fatal("expecting IPv4 addresses, got", a4)
 	}
 
-	a6, err := it.LookupIPv6(context.Background(), "ns1.linode.com")
+	a6, err := it.LookupIPv6(context.Background(), "ns1.softlayer.com")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -154,7 +154,7 @@ func TestIterator(t *testing.T) {
 		t.Fatal("expecting IPv6 addresses, got", a6)
 	}
 
-	as, err := it.LookupIP(context.Background(), "ns1.linode.com")
+	as, err := it.LookupIP(context.Background(), "ns1.softlayer.com")
 	if err != nil {
 		t.Fatal(err)
 	}
