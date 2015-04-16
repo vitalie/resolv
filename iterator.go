@@ -86,7 +86,7 @@ func (it *Iterator) run(ctx context.Context, name string, type_ uint16, depth, i
 		case resp := <-c:
 			if it.Debug {
 				log.Println("iterator: servers=", nss)
-				log.Println("iterator: ===>", resp.Addr(), resp)
+				log.Println("iterator: ===>", resp.Addr, resp)
 			}
 
 			if resp.Err != nil {

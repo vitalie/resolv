@@ -7,24 +7,22 @@ import (
 )
 
 type Response struct {
-	Req *Request
-	Msg *dns.Msg
-	Rtt time.Duration
-	Err error
+	Addr  string
+	Name  string
+	Type  uint16
+	Class uint16
+	Msg   *dns.Msg
+	Rtt   time.Duration
+	Err   error
 }
 
 func NewResponse(req *Request) *Response {
 	r := &Response{
-		Req: req,
+		Addr:  req.Addr,
+		Name:  req.Name,
+		Type:  req.Type,
+		Class: req.Class,
 	}
 
 	return r
-}
-
-func (r *Response) Addr() string {
-	if r.Req == nil {
-		return "<nil>"
-	}
-
-	return r.Req.Addr
 }

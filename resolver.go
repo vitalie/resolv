@@ -90,11 +90,9 @@ func (r *Resolver) Resolve(req *Request) <-chan *Response {
 			return
 		}
 
-		resp := &Response{
-			Req: req,
-			Msg: in,
-			Rtt: rtt,
-		}
+		resp := NewResponse(req)
+		resp.Msg = in
+		resp.Rtt = rtt
 
 		c <- resp
 	}()
