@@ -44,6 +44,7 @@ func main() {
 
 - Handle retrying
 - Handle truncated responses
+- Don't query local resolver
 
 ## Contributing
 
