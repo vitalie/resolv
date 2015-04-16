@@ -36,8 +36,9 @@ func SetRD(req *Request) {
 }
 
 func NewRequest(addr, name string, type_ uint16, options ...RequestOption) *Request {
-	if !strings.Contains(addr, ":") {
+	if _, _, err := net.SplitHostPort(addr); err != nil {
 		addr = net.JoinHostPort(addr, DefaultPort)
+
 	}
 
 	req := &Request{
