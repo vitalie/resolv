@@ -40,6 +40,11 @@ func main() {
 }
 ```
 
+## TODO
+
+- Handle retrying
+- Handle truncated responses
+
 ## Contributing
 
 1. Fork it
