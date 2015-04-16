@@ -58,7 +58,7 @@ func main() {
 			log.Fatalln(r.Err)
 		}
 
-		fmt.Println("=====>", r.Addr())
+		fmt.Println("=====>", r.Addr)
 		fmt.Println(r.Msg)
 	}
 }
