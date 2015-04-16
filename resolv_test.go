@@ -162,21 +162,4 @@ func TestIterator(t *testing.T) {
 	if len(as) == 0 {
 		t.Fatal("expecting IP4, IPv6 addresses, got", as)
 	}
-
-	// ctx := context.Background()
-	// r := <-it.LookupIPv4(ctx, "www.cherpec.com")
-	// if r.Err != nil {
-	// 	t.Fatal(r.Err)
-	// }
-
-	// cnames := map[string]string{
-	// 	"www.cherpec.com.":       "cherpec.herokuapp.com.",
-	// 	"cherpec.herokuapp.com.": "us-east-1-a.route.herokuapp.com.",
-	// }
-
-	// for k, v := range cnames {
-	// 	if r.Cname[k] != v {
-	// 		t.Fatalf("expecting %v=>%v, got %v=>%v", k, v, k, r.Cname[k])
-	// 	}
-	// }
 }
