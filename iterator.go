@@ -120,10 +120,7 @@ func (it *Iterator) run(ctx context.Context, name string, type_ uint16, depth, i
 				return out
 			} else {
 				if len(referals) > 0 {
-					for resp := range it.run(ctx, name, type_, depth+1, i, skip, referals...) {
-						out <- resp
-					}
-					return out
+					return it.run(ctx, name, type_, depth+1, i, skip, referals...)
 				}
 			}
 		case <-ctx.Done():
