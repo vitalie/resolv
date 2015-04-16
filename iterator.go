@@ -38,6 +38,10 @@ func (it *Iterator) LookupIP(ctx context.Context, host string) ([]net.IP, error)
 
 // LookupIPv4 looks up the IPv4 addresses for the host.
 func (it *Iterator) LookupIPv4(ctx context.Context, host string) ([]net.IP, error) {
+	if ip, ok := toIPv4(host); ok {
+		return []net.IP{ip}, nil
+	}
+
 	var last *Response
 	for r := range it.Resolve(ctx, host, dns.TypeA) {
 		if r.Err != nil {
@@ -62,6 +66,10 @@ func (it *Iterator) LookupIPv4(ctx context.Context, host string) ([]net.IP, erro
 
 // LookupIPv6 looks up the IPv6 addresses for the host.
 func (it *Iterator) LookupIPv6(ctx context.Context, host string) ([]net.IP, error) {
+	if ip, ok := toIPv6(host); ok {
+		return []net.IP{ip}, nil
+	}
+
 	var last *Response
 	for r := range it.Resolve(ctx, host, dns.TypeAAAA) {
 		if r.Err != nil {

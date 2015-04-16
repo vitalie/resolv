@@ -2,6 +2,7 @@ package resolv
 
 import (
 	"math/rand"
+	"net"
 )
 
 // peekRandom peeks a random name server from nss list
@@ -16,4 +17,14 @@ func peekRandom(nss []string) (string, []string) {
 
 	i := rand.Intn(n)
 	return nss[i], append(nss[:i], nss[i+1:]...)
+}
+
+func toIPv4(s string) (net.IP, bool) {
+	ip := net.ParseIP(s)
+	return ip, ip != nil && ip.To4() != nil
+}
+
+func toIPv6(s string) (net.IP, bool) {
+	ip := net.ParseIP(s)
+	return ip, ip != nil && ip.To16() != nil
 }
