@@ -23,10 +23,8 @@ func NewIterator(r *Resolver) *Iterator {
 
 // LookupIPv4 looks up the IPv4 addresses for the host.
 func (it *Iterator) LookupIPv4(ctx context.Context, host string) ([]net.IP, error) {
-	fqdn := dns.Fqdn(strings.ToLower(host))
-
 	var last *Response
-	for r := range it.Resolve(ctx, fqdn, dns.TypeA) {
+	for r := range it.Resolve(ctx, host, dns.TypeA) {
 		if r.Err != nil {
 			return nil, r.Err
 		}
@@ -39,6 +37,30 @@ func (it *Iterator) LookupIPv4(ctx context.Context, host string) ([]net.IP, erro
 		case (*dns.A):
 			rr := i.(*dns.A)
 			ips = append(ips, rr.A)
+		default:
+			return nil, fmt.Errorf("iterator: unexpected record: %v", i)
+		}
+	}
+
+	return ips, nil
+}
+
+// LookupIPv6 looks up the IPv6 addresses for the host.
+func (it *Iterator) LookupIPv6(ctx context.Context, host string) ([]net.IP, error) {
+	var last *Response
+	for r := range it.Resolve(ctx, host, dns.TypeAAAA) {
+		if r.Err != nil {
+			return nil, r.Err
+		}
+		last = r
+	}
+
+	var ips []net.IP
+	for _, i := range last.Msg.Answer {
+		switch i.(type) {
+		case (*dns.AAAA):
+			rr := i.(*dns.AAAA)
+			ips = append(ips, rr.AAAA)
 		default:
 			return nil, fmt.Errorf("iterator: unexpected record: %v", i)
 		}

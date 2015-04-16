@@ -136,14 +136,22 @@ func TestIterator(t *testing.T) {
 	rs := resolv.NewResolver()
 	it := resolv.NewIterator(rs)
 
-	ctx := context.Background()
-	ips, err := it.LookupIPv4(ctx, "www.cherpec.com")
+	a4, err := it.LookupIPv4(context.Background(), "www.cherpec.com")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(ips) == 0 {
-		t.Fatal("expecting one or more IPv4 addresses, got", ips)
+	if len(a4) == 0 {
+		t.Fatal("expecting IPv4 addresses, got", a4)
+	}
+
+	a6, err := it.LookupIPv6(context.Background(), "ns1.linode.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(a6) == 0 {
+		t.Fatal("expecting IPv6 addresses, got", a6)
 	}
 
 	// ctx := context.Background()
