@@ -61,10 +61,9 @@ func (it *Iterator) run(ctx context.Context, name string, type_ uint16, depth, i
 		return out
 	}
 
-	for len(nss) > 0 {
+	for ; len(nss) > 0; i++ {
 		var ns string
 
-		i++
 		if i > MaxIterations {
 			out <- &Response{Err: fmt.Errorf("iterator: max iterations reached")}
 			return out
@@ -107,14 +106,14 @@ func (it *Iterator) run(ctx context.Context, name string, type_ uint16, depth, i
 
 			if referals, cname, ok := it.lookup(resp.Msg, fqdn); ok {
 				if cname != "" {
-					return it.run(ctx, cname, type_, depth+1, i, map[string]bool{}, RootServers...)
+					return it.run(ctx, cname, type_, depth+1, i+1, map[string]bool{}, RootServers...)
 				} else {
 					out <- resp
 					return out
 				}
 			} else {
 				if len(referals) > 0 {
-					return it.run(ctx, name, type_, depth+1, i, skip, referals...)
+					return it.run(ctx, name, type_, depth+1, i+1, skip, referals...)
 				}
 			}
 		case <-ctx.Done():
