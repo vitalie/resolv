@@ -154,6 +154,15 @@ func TestIterator(t *testing.T) {
 		t.Fatal("expecting IPv6 addresses, got", a6)
 	}
 
+	as, err := it.LookupIP(context.Background(), "ns1.linode.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(as) == 0 {
+		t.Fatal("expecting IP4, IPv6 addresses, got", as)
+	}
+
 	// ctx := context.Background()
 	// r := <-it.LookupIPv4(ctx, "www.cherpec.com")
 	// if r.Err != nil {

@@ -21,6 +21,21 @@ func NewIterator(r *Resolver) *Iterator {
 	return &Iterator{rs: r}
 }
 
+// LookupIP looks up the IPv4 and IPv6 addresses for the host.
+func (it *Iterator) LookupIP(ctx context.Context, host string) ([]net.IP, error) {
+	a4, err := it.LookupIPv4(ctx, host)
+	if err != nil {
+		return nil, err
+	}
+
+	a6, err := it.LookupIPv6(ctx, host)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(a4, a6...), nil
+}
+
 // LookupIPv4 looks up the IPv4 addresses for the host.
 func (it *Iterator) LookupIPv4(ctx context.Context, host string) ([]net.IP, error) {
 	var last *Response
