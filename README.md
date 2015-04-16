@@ -42,10 +42,10 @@ func main() {
 
 ## TODO
 
-- Handle retrying
-- Handle truncated responses
+- Cache responses
+- Retry queries on timeout
 - Don't query local resolver
-- Caching
+- Switch to TCP on truncated responses
 
 ## Contributing
 
