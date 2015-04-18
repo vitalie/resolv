@@ -117,8 +117,11 @@ func (it *Iterator) LookupNS(ctx context.Context, host string) ([]*net.NS, error
 	return nss, nil
 }
 
-// LookupDeleg looks up the DNS NS records for the given name.
+// Delegation looks up the delegation returning the parent name and the DNS NS records for a given name.
 func (it *Iterator) Delegation(ctx context.Context, host string) (string, []*net.NS, error) {
+	// We'll look in the Authority section unless the name
+	// is ".", for this case we'll check the Answer section.
+	// We have at least one response (the root servers).
 	var prev, last *Response
 	for r := range it.Resolve(ctx, host, dns.TypeNS) {
 		if r.Err != nil {
@@ -134,8 +137,14 @@ func (it *Iterator) Delegation(ctx context.Context, host string) (string, []*net
 		last = r
 	}
 
+	s := prev.Msg.Ns
+	if last == prev {
+		// Root domain (name = ".").
+		s = prev.Msg.Answer
+	}
+
 	var nss []*net.NS
-	for _, i := range prev.Msg.Ns {
+	for _, i := range s {
 		switch i.(type) {
 		case (*dns.NS):
 			rr := i.(*dns.NS)
