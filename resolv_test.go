@@ -39,21 +39,21 @@ func TestResolve(t *testing.T) {
 	req := resolv.NewRequest("ns1.luadns.net", "cherpec.com", dns.TypeA)
 	resp := <-r.Resolve(req)
 	if resp.Err != nil {
-		t.Fatal(resp.Err)
+		t.Error(resp.Err)
 	}
 
 	// TCP Mode
 	req = resolv.NewRequest("ns1.luadns.net", "cherpec.com", dns.TypeA, resolv.SetTCPMode)
 	resp = <-r.Resolve(req)
 	if resp.Err != nil {
-		t.Fatal(resp.Err)
+		t.Error(resp.Err)
 	}
 
 	// CHAOS class
 	req = resolv.NewRequest("ns1.softlayer.com", "version.bind", dns.TypeTXT, resolv.SetCHAOSClass)
 	resp = <-r.Resolve(req)
 	if resp.Err != nil {
-		t.Fatal(resp.Err)
+		t.Error(resp.Err)
 	}
 }
 
@@ -66,13 +66,8 @@ func TestTimeout(t *testing.T) {
 	req := resolv.NewRequest("ns1.luadns.net", "google.com", dns.TypeA)
 	resp := <-r.Resolve(req)
 	if resp.Err != nil {
-		err, ok := resp.Err.(*resolv.DNSError)
-		if !ok {
-			t.Errorf("expected DNSError got: %v", resp.Err)
-		}
-
-		if !err.Timeout() {
-			t.Errorf("expected timeout got: %v", resp.Err)
+		if err, ok := resp.Err.(*resolv.DNSError); !ok || !err.Timeout() {
+			t.Errorf("expected timeout, got: %v", resp.Err)
 		}
 	}
 }
@@ -142,7 +137,7 @@ func TestIterator(t *testing.T) {
 	}
 
 	if len(a4) == 0 {
-		t.Fatal("expecting IPv4 addresses, got", a4)
+		t.Error("expecting IPv4 addresses, got", a4)
 	}
 
 	a6, err := it.LookupIPv6(context.Background(), "ns1.softlayer.com")
@@ -151,7 +146,7 @@ func TestIterator(t *testing.T) {
 	}
 
 	if len(a6) == 0 {
-		t.Fatal("expecting IPv6 addresses, got", a6)
+		t.Error("expecting IPv6 addresses, got", a6)
 	}
 
 	as, err := it.LookupIP(context.Background(), "ns1.softlayer.com")
@@ -160,7 +155,7 @@ func TestIterator(t *testing.T) {
 	}
 
 	if len(as) == 0 {
-		t.Fatal("expecting IP4, IPv6 addresses, got", as)
+		t.Error("expecting IP4, IPv6 addresses, got", as)
 	}
 
 	nss, err := it.LookupNS(context.Background(), "cherpec.com")
@@ -169,7 +164,7 @@ func TestIterator(t *testing.T) {
 	}
 
 	if len(nss) == 0 {
-		t.Fatal("expecting NS records, got", nss)
+		t.Error("expecting NS records, got", nss)
 	}
 
 	for _, ns := range nss {
@@ -184,16 +179,16 @@ func TestIterator(t *testing.T) {
 	}
 
 	if srv == "" {
-		t.Fatal("expecting server name, got", srv)
+		t.Error("expecting server name, got", srv)
 	}
 
 	if len(nss) == 0 {
-		t.Fatal("expecting NS records, got", nss)
+		t.Error("expecting NS records, got", nss)
 	}
 
 	for _, ns := range nss {
 		if _, ok := nssMap[ns.Host]; !ok {
-			t.Fatal("unexpected NS record", ns)
+			t.Error("unexpected NS record", ns)
 		}
 	}
 }
