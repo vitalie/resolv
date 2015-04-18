@@ -20,9 +20,11 @@ $ go get -u github.com/vitalie/resolv
 package main
 
 import (
+    "fmt"
     "log"
 
     "github.com/miekg/dns"
+    "golang.org/x/net/context"
     "github.com/vitalie/resolv"
 )
 
@@ -35,8 +37,22 @@ func main() {
     if resp.Err != nil {
         log.Fatalln("error:", resp.Err)
     }
+    fmt.Println(resp)
 
-    log.Println(resp)
+    // Create a request factory.
+    fact := resolv.NewRequestFactory()
+
+    // Query multiple types.
+    reqs := fact.FromTypes("ns1.luadns.net", "cherpec.com", dns.TypeA, dns.TypeNS, dns.TypeMX)
+    for resp := range r.FanIn(context.Background(), reqs...) {
+      fmt.Println(resp)
+    }
+
+    // Query multiple names.
+    reqs = fact.FromNames("ns1.luadns.net", dns.TypeA, "cherpec.com", "www.cherpec.com")
+    for resp := range r.FanIn(context.Background(), reqs...) {
+      fmt.Println(resp)
+    }
 }
 ```
 
