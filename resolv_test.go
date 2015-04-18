@@ -9,12 +9,12 @@ import (
 	"golang.org/x/net/context"
 )
 
-var nss = []string{
-	"ns1.luadns.net",
-	"ns2.luadns.net",
-	"ns3.luadns.net",
-	"ns4.luadns.net",
-	"ns5.luadns.net",
+var nssMap = map[string]bool{
+	"ns1.luadns.net.": true,
+	"ns2.luadns.net.": true,
+	"ns3.luadns.net.": true,
+	"ns4.luadns.net.": true,
+	"ns5.luadns.net.": true,
 }
 
 // Simple resolve benchmark, run with:
@@ -161,5 +161,39 @@ func TestIterator(t *testing.T) {
 
 	if len(as) == 0 {
 		t.Fatal("expecting IP4, IPv6 addresses, got", as)
+	}
+
+	nss, err := it.LookupNS(context.Background(), "cherpec.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(nss) == 0 {
+		t.Fatal("expecting NS records, got", nss)
+	}
+
+	for _, ns := range nss {
+		if _, ok := nssMap[ns.Host]; !ok {
+			t.Fatal("unexpected NS record", ns)
+		}
+	}
+
+	srv, nss, err := it.Delegation(context.Background(), "cherpec.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if srv == "" {
+		t.Fatal("expecting server name, got", srv)
+	}
+
+	if len(nss) == 0 {
+		t.Fatal("expecting NS records, got", nss)
+	}
+
+	for _, ns := range nss {
+		if _, ok := nssMap[ns.Host]; !ok {
+			t.Fatal("unexpected NS record", ns)
+		}
 	}
 }

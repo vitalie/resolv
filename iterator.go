@@ -92,6 +92,63 @@ func (it *Iterator) LookupIPv6(ctx context.Context, host string) ([]net.IP, erro
 	return ips, nil
 }
 
+// LookupNS looks up the DNS NS records for the given name.
+func (it *Iterator) LookupNS(ctx context.Context, host string) ([]*net.NS, error) {
+	var last *Response
+	for r := range it.Resolve(ctx, host, dns.TypeNS) {
+		if r.Err != nil {
+			return nil, r.Err
+		}
+		last = r
+	}
+
+	var nss []*net.NS
+	for _, i := range last.Msg.Answer {
+		switch i.(type) {
+		case (*dns.NS):
+			rr := i.(*dns.NS)
+			hn := strings.ToLower(rr.Ns)
+			nss = append(nss, &net.NS{Host: hn})
+		default:
+			return nil, fmt.Errorf("iterator: unexpected record: %v", i)
+		}
+	}
+
+	return nss, nil
+}
+
+// LookupDeleg looks up the DNS NS records for the given name.
+func (it *Iterator) Delegation(ctx context.Context, host string) (string, []*net.NS, error) {
+	var prev, last *Response
+	for r := range it.Resolve(ctx, host, dns.TypeNS) {
+		if r.Err != nil {
+			return "", nil, r.Err
+		}
+
+		if last == nil {
+			prev = r
+			last = r
+		}
+
+		prev = last
+		last = r
+	}
+
+	var nss []*net.NS
+	for _, i := range prev.Msg.Ns {
+		switch i.(type) {
+		case (*dns.NS):
+			rr := i.(*dns.NS)
+			hn := strings.ToLower(rr.Ns)
+			nss = append(nss, &net.NS{Host: hn})
+		default:
+			return "", nil, fmt.Errorf("iterator: unexpected record: %v", i)
+		}
+	}
+
+	return prev.Host(), nss, nil
+}
+
 // Resolve looks up the name starting from root servers following referals.
 func (it *Iterator) Resolve(ctx context.Context, name string, type_ uint16) <-chan *Response {
 	return it.run(ctx, name, type_, 0, 0, map[string]bool{}, RootServers...)
@@ -149,18 +206,23 @@ func (it *Iterator) run(ctx context.Context, name string, type_ uint16, depth, i
 				return out
 			}
 
+			out <- resp
+
 			if referals, cname, ok := it.lookup(resp.Msg, fqdn); ok {
 				if cname != "" {
-					return it.run(ctx, cname, type_, depth+1, i+1, map[string]bool{}, RootServers...)
-				} else {
-					out <- resp
-					return out
+					// Follow CNAME.
+					for sr := range it.run(ctx, cname, type_, depth+1, i+1, map[string]bool{}, RootServers...) {
+						out <- sr
+					}
 				}
 			} else {
-				if len(referals) > 0 {
-					return it.run(ctx, name, type_, depth+1, i+1, skip, referals...)
+				// Follow referals.
+				for sr := range it.run(ctx, name, type_, depth+1, i+1, skip, referals...) {
+					out <- sr
 				}
 			}
+
+			return out
 		case <-ctx.Done():
 			out <- &Response{Err: ctx.Err()}
 			return out

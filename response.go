@@ -1,6 +1,8 @@
 package resolv
 
 import (
+	"net"
+	"strings"
 	"time"
 
 	"github.com/miekg/dns"
@@ -25,4 +27,13 @@ func NewResponse(req *Request) *Response {
 	}
 
 	return r
+}
+
+func (r *Response) Host() string {
+	host, _, err := net.SplitHostPort(r.Addr)
+	if err != nil {
+		return r.Addr
+	}
+
+	return dns.Fqdn(strings.ToLower(host))
 }
