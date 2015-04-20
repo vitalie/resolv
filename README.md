@@ -1,4 +1,4 @@
-# Resolv [![GoDoc](https://godoc.org/github.com/vitalie/resolv?status.svg)](http://godoc.org/github.com/vitalie/resolv) [![Build Status](https://travis-ci.org/vitalie/resolv.svg?branch=master)](https://travis-ci.org/vitalie/resolv)
+# Resolv [![Travis CI](https://travis-ci.org/vitalie/resolv.svg?branch=master)](https://travis-ci.org/vitalie/resolv) [![GoDoc](https://godoc.org/github.com/vitalie/resolv?status.svg)](http://godoc.org/github.com/vitalie/resolv)
 
 A [context](https://godoc.org/golang.org/x/net/context) aware DNS library
 based on [Miek](https://github.com/miekg/dns)'s library. It's goal to
