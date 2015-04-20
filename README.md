@@ -1,12 +1,9 @@
-# Resolv
+# Resolv [![GoDoc](https://godoc.org/github.com/vitalie/resolv?status.svg)](http://godoc.org/github.com/vitalie/resolv) [![Build Status](https://travis-ci.org/vitalie/resolv.svg?branch=master)](https://travis-ci.org/vitalie/resolv)
 
 A [context](https://godoc.org/golang.org/x/net/context) aware DNS library
 based on [Miek](https://github.com/miekg/dns)'s library. It's goal to
 offer a simple API to most common DNS operations while preserving access
 to low level data.
-
-  - [![GoDoc](https://godoc.org/github.com/vitalie/resolv?status.svg)](http://godoc.org/github.com/vitalie/resolv)
-  - [![Build Status](https://travis-ci.org/vitalie/resolv.svg?branch=master)](https://travis-ci.org/vitalie/resolv)
 
 ## Installation
 
